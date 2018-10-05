@@ -208,6 +208,7 @@ function buildBrowser(sources, dir, tmpDir, depsRequireCode, minify, npmPackage,
                 var browserify = require("browserify");
                 var dest = path.join(root, "bluebird.js");
                 var minDest = path.join(root, "bluebird.min.js");
+                var noAmdDestination = path.join(root, "bluebird-no-amd.min.js");
                 var b = browserify({
                     entries: entries,
                     detectGlobals: false,
@@ -222,7 +223,7 @@ function buildBrowser(sources, dir, tmpDir, depsRequireCode, minify, npmPackage,
                     }";
                     src = src + alias;
                     src = src.replace(/\brequire\b/g, "_dereq_");
-                    var minWrite, write;
+                    var minWrite, write, writeGlobal;
                     if (minify) {
                         var minSrc = src.replace( /__DEBUG__/g, "false" );
                         minSrc = UglifyJS.minify(minSrc, {
@@ -236,8 +237,11 @@ function buildBrowser(sources, dir, tmpDir, depsRequireCode, minify, npmPackage,
                     src = src.replace( /__DEBUG__/g, "true" );
                     src = license + header + src;
                     write = fs.writeFileAsync(dest, src);
+                    
+                    var noAmd = src.replace('define.amd', 'false');
+                    writeNoAmd = fs.writeFileAsync(noAmdDestination, noAmd);
 
-                    return Promise.all([write, minWrite]);
+                    return Promise.all([write, minWrite, writeNoAmd]);
                 })
             }, {
                 context: {
